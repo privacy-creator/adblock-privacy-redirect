@@ -1,7 +1,11 @@
 window.onload = function () {
-    // getFilters()
     getFiltersFromJson()
-    // ytBlockScriptsByName()
+    ytBlockScriptsByName()
+
+    checkVPNStatus()
+    setInterval(checkVPNStatus, 10 * 1000)
+
+    vpnBlockSite()
 
     loadRedirectSettings()
     youtubeRedirectFunc()
