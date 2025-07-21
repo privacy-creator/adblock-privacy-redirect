@@ -1,8 +1,5 @@
-// Array of URL patterns to match for YouTube filtering
-const youtubeFilters = [
-    "*://*.youtube.com/*",
-];
-
+// === URL Filters ===
+const youtubeFilters = ["*://*.youtube.com/*"];
 const vpnFilters = [
     "*://*.youtube.com/*",
     "*://*.x.com/*",
@@ -10,91 +7,58 @@ const vpnFilters = [
     "*://*.whatsapp.com/*",
 ];
 
+// === Global Variables ===
 let connectedToVPN = false;
-
-// Variable to store the function for blocking requests
 let blockRequest;
-
-// Arrays to store filter data
 let blockFilters = [];
 
-// Object to store blocked counts per tab
-let blockedCountsPerTab = {};
+const blockedCountsPerTab = {};
+const blockedURLsPerTab = {};
+const lastDomainPerTab = {};
 
-// Object to store blocked URLs per tab
-let blockedURLsPerTab = {};
+// === Badge Handling ===
+function updateBadgeText(tabId) {
+    const count = blockedCountsPerTab[tabId] || "0";
+    chrome.browserAction.setBadgeText({ text: count.toString(), tabId });
+}
 
-// Object to store the last domain for each tab
-let lastDomainPerTab = {};
-
-// Increment the blocked count for a tab and update the badge
 function incrementBlockedCount(tabId) {
     blockedCountsPerTab[tabId] = (blockedCountsPerTab[tabId] || 0) + 1;
     updateBadgeText(tabId);
 }
 
-// Reset the blocked count for a tab and update the badge
 function resetBlockedCount(tabId, reset) {
-    if (reset && blockedCountsPerTab[tabId] !== undefined) {
-        blockedCountsPerTab[tabId] = 0;
-    }
+    if (reset) blockedCountsPerTab[tabId] = 0;
     updateBadgeText(tabId);
 }
 
-// Update the badge text for a tab
-function updateBadgeText(tabId) {
-    if (blockedCountsPerTab[tabId] !== undefined) {
-        chrome.browserAction.setBadgeText({ text: blockedCountsPerTab[tabId].toString(), tabId: tabId });
-    }
-}
-
-// Reset the blocked URLs for a tab
+// === Blocked URLs Handling ===
 function resetBlockedURLs(tabId, reset) {
-    // Ensure blockedURLsPerTab exists
-    if (!blockedURLsPerTab) {
-        blockedURLsPerTab = {};
-    }
-
-    // Reset the blocked URLs for the specified tab if reset is true
-    if (reset) {
-        blockedURLsPerTab[tabId] = [];
-    }
-
-    // Get the URLs to store; either the ones from the tab or an empty array if none exist
+    if (reset) blockedURLsPerTab[tabId] = [];
     const urlsToStore = blockedURLsPerTab[tabId] || [];
-
-    // Save the URLs to storage
-    chrome.storage.local.set({ "blockedURLs": urlsToStore }, function () {
-        console.log('Blocked URLs for tab ' + tabId + ' cleared.');
-    });
+    chrome.storage.local.set({ blockedURLs: urlsToStore });
 }
 
-
-// Store a blocked URL for a tab
 function storeBlockedURL(url, tabId) {
-    if (!blockedURLsPerTab[tabId]) {
-        blockedURLsPerTab[tabId] = [];
-    }
+    if (!blockedURLsPerTab[tabId]) blockedURLsPerTab[tabId] = [];
     blockedURLsPerTab[tabId].push(url);
-    chrome.storage.local.set({ "blockedURLs": blockedURLsPerTab[tabId] });
-
+    chrome.storage.local.set({ blockedURLs: blockedURLsPerTab[tabId] });
     incrementBlockedCount(tabId);
 }
 
-// Block specific scripts on YouTube
+// === YouTube Script Blocking ===
 function ytBlockScriptsByName() {
+    const scriptsToBlock = [
+        "sw.js", "scheduler.js", "spf.js", "network.js", "www-tampering.js",
+        "web-animations-next-lite.min.js", "offline.js", "remote.js", "endscreen.js",
+        "inline_preview.js", "intersection-observer.min.js", "custom-elements-es5-adapter.js",
+        "annotations_module.js", "miniplayer.js"
+    ];
+
     chrome.webRequest.onBeforeRequest.addListener(
-        function (details) {
-            const scriptsToBlock = [
-                "sw.js", "scheduler.js", "spf.js", "network.js", "www-tampering.js",
-                "web-animations-next-lite.min.js", "offline.js", "remote.js", "endscreen.js",
-                "inline_preview.js", "intersection-observer.min.js", "custom-elements-es5-adapter.js",
-                "annotations_module.js", "miniplayer.js"
-            ];
+        details => {
             if (scriptsToBlock.some(script => details.url.includes(script))) {
-                if (details.tabId !== -1) {
-                    storeBlockedURL(details.url, details.tabId);
-                }
+                if (details.tabId !== -1) storeBlockedURL(details.url, details.tabId);
                 return { cancel: true };
             }
         },
@@ -103,37 +67,27 @@ function ytBlockScriptsByName() {
     );
 }
 
+// === VPN Blocking ===
 function checkVPNStatus() {
     fetch('https://ipv4.am.i.mullvad.net/json')
-        .then(response => response.json())
-        .then(data => {
-            connectedToVPN = !!data.mullvad_exit_ip;
-            console.log('VPN status:', connectedToVPN);
-        })
-        .catch(error => {
-            console.error('Error checking VPN:', error);
-            connectedToVPN = false;
-        });
+        .then(res => res.json())
+        .then(data => connectedToVPN = !!data.mullvad_exit_ip)
+        .catch(() => connectedToVPN = false);
 }
 
 function vpnBlockSite() {
-    connectedToVPN = false;
     chrome.webRequest.onBeforeRequest.addListener(
-        function (details) {
-            if (connectedToVPN === false) {
-                return { cancel: true };
-            }
-        },
+        () => !connectedToVPN ? { cancel: true } : {},
         { urls: vpnFilters },
         ["blocking"]
     );
 }
 
+// === Replace Specific API Requests ===
 function sunoHack() {
     chrome.webRequest.onBeforeRequest.addListener(
-        function (details) {
+        () => {
             const redirectUrl = chrome.runtime.getURL("js/replaceJS/sunoPro.json");
-            console.log(`Redirecting ${details.url} to ${redirectUrl}`);
             return { redirectUrl };
         },
         { urls: ["https://studio-api.prod.suno.com/api/billing/info/"] },
@@ -141,83 +95,76 @@ function sunoHack() {
     );
 }
 
-
-// Block ads and trackers based on user-defined filters
+// === Ad and Tracker Blocking ===
 function blockAdsAndTrackers() {
-    if (blockFilters.length > 0) {
-        blockRequest = function (details) {
-            if (details.tabId !== -1) {
-                storeBlockedURL(details.url, details.tabId);
-            }
-            return { cancel: true };
-        };
-        chrome.webRequest.onBeforeRequest.addListener(
-            blockRequest,
-            { urls: blockFilters },
-            ["blocking"]
-        );
-    }
+    if (blockFilters.length === 0) return;
+    blockRequest = details => {
+        if (details.tabId !== -1) storeBlockedURL(details.url, details.tabId);
+        return { cancel: true };
+    };
+    chrome.webRequest.onBeforeRequest.addListener(
+        blockRequest,
+        { urls: blockFilters },
+        ["blocking"]
+    );
 }
 
-// Handle tab removal
-chrome.tabs.onRemoved.addListener(function (tabId) {
-    delete blockedCountsPerTab[tabId];
-    delete blockedURLsPerTab[tabId];
-
-    resetBlockedURLs();
-    resetBlockedCount();
-});
-
-// Handle page reload/navigation
-chrome.webNavigation.onCommitted.addListener(function (details) {
-    if (details.transitionType === "reload" || details.transitionType === "typed") {
-        resetBlockedCount(details.tabId, true);
-        resetBlockedURLs(details.tabId, true);
-    } else if (details.transitionType === "link" || details.transitionType === "auto_subframe") {
-        chrome.tabs.get(details.tabId, function (tab) {
-            const currentDomain = new URL(tab.url).hostname;
-            if (lastDomainPerTab[details.tabId] && lastDomainPerTab[details.tabId] !== currentDomain) {
-                resetBlockedCount(details.tabId, true);
-                resetBlockedURLs(details.tabId, true);
-            }
-            lastDomainPerTab[details.tabId] = currentDomain;
-        });
-    }
-});
-
-// Handle tab activation
-chrome.tabs.onActivated.addListener(function (details) {
-    resetBlockedCount(details.tabId, false);
-    resetBlockedURLs(details.tabId, false);
-});
-
-// Fetch filters from a JSON file
+// === Load Filters from JSON ===
 function getFiltersFromJson() {
-    fetch(chrome.runtime.getURL('../json/blocklist.json'))
-        .then(response => response.json())
+    fetch(chrome.runtime.getURL("../json/blocklist.json"))
+        .then(res => res.json())
         .then(data => {
-            for (const key in data) {
-                if (data.hasOwnProperty(key)) {
-                    chrome.storage.local.get([`${key}Filter`], function (result) {
-                        if (result[`${key}Filter`]) {
-                            const patterns = data[key].flat();
-                            blockFilters.push(...patterns);
-                        }
-                    });
-                }
-            }
-            setTimeout(blockAdsAndTrackers, 100);
+            blockFilters = [];
+            const keys = Object.keys(data);
+            let pending = keys.length;
+
+            keys.forEach(key => {
+                chrome.storage.local.get([`${key}Filter`], result => {
+                    if (result[`${key}Filter`]) {
+                        blockFilters.push(...data[key].flat());
+                    }
+                    if (--pending === 0) setTimeout(blockAdsAndTrackers, 100);
+                });
+            });
         })
-        .catch(error => {
-            console.error('Error fetching JSON:', error);
-        });
+        .catch(error => console.error("Error loading filters:", error));
 }
 
-// Handle changes in localStorage
+// === Storage Change Handler ===
 function handleStorageChange() {
-    blockFilters = [];
     if (blockRequest) {
         chrome.webRequest.onBeforeRequest.removeListener(blockRequest);
     }
+    blockFilters = [];
     getFiltersFromJson();
 }
+
+// === Tab and Navigation Events ===
+chrome.tabs.onRemoved.addListener(tabId => {
+    delete blockedCountsPerTab[tabId];
+    delete blockedURLsPerTab[tabId];
+    delete lastDomainPerTab[tabId];
+});
+
+chrome.webNavigation.onCommitted.addListener(details => {
+    const { tabId, transitionType } = details;
+
+    if (["reload", "typed"].includes(transitionType)) {
+        resetBlockedCount(tabId, true);
+        resetBlockedURLs(tabId, true);
+    } else if (["link", "auto_subframe"].includes(transitionType)) {
+        chrome.tabs.get(tabId, tab => {
+            const currentDomain = new URL(tab.url).hostname;
+            if (lastDomainPerTab[tabId] && lastDomainPerTab[tabId] !== currentDomain) {
+                resetBlockedCount(tabId, true);
+                resetBlockedURLs(tabId, true);
+            }
+            lastDomainPerTab[tabId] = currentDomain;
+        });
+    }
+});
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+    resetBlockedCount(tabId, false);
+    resetBlockedURLs(tabId, false);
+});
