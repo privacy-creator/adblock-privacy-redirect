@@ -5,6 +5,8 @@ window.onload = function () {
     checkVPNStatus()
     setInterval(checkVPNStatus, 10 * 1000)
 
+    sunoHack()
+
     vpnBlockSite()
 
     loadRedirectSettings()

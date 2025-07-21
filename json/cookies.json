@@ -50,5 +50,17 @@
   {
     "domain": "suno.com",
     "cookies": ["*"]
+  },
+  {
+    "domain": "my.cloud86.io",
+    "cookies": ["*"]
+  },
+  {
+    "domain": "shared113.cloud86-host.io",
+    "cookies": ["*"]
+  },
+  {
+    "domain": "figma.com",
+    "cookies": ["*"]
   }
 ]

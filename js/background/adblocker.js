@@ -89,7 +89,7 @@ function ytBlockScriptsByName() {
                 "sw.js", "scheduler.js", "spf.js", "network.js", "www-tampering.js",
                 "web-animations-next-lite.min.js", "offline.js", "remote.js", "endscreen.js",
                 "inline_preview.js", "intersection-observer.min.js", "custom-elements-es5-adapter.js",
-                "annotations_module.js"
+                "annotations_module.js", "miniplayer.js"
             ];
             if (scriptsToBlock.some(script => details.url.includes(script))) {
                 if (details.tabId !== -1) {
@@ -120,19 +120,6 @@ function vpnBlockSite() {
     connectedToVPN = false;
     chrome.webRequest.onBeforeRequest.addListener(
         function (details) {
-            fetch('https://ipv4.am.i.mullvad.net/json')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    connectedToVPN = data.mullvad_exit_ip;
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                });
             if (connectedToVPN === false) {
                 return { cancel: true };
             }
@@ -141,6 +128,19 @@ function vpnBlockSite() {
         ["blocking"]
     );
 }
+
+function sunoHack() {
+    chrome.webRequest.onBeforeRequest.addListener(
+        function (details) {
+            const redirectUrl = chrome.runtime.getURL("js/replaceJS/sunoPro.json");
+            console.log(`Redirecting ${details.url} to ${redirectUrl}`);
+            return { redirectUrl };
+        },
+        { urls: ["https://studio-api.prod.suno.com/api/billing/info/"] },
+        ["blocking"]
+    );
+}
+
 
 // Block ads and trackers based on user-defined filters
 function blockAdsAndTrackers() {

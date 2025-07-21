@@ -219,6 +219,12 @@
     "*://m-chromadrone.prod.suno.com/*",
     "*://s.prod.suno.com/*",
     "*://suno.com/monitoring?*",
-    "*://rumble.com/l/*"
+    "*://suno.com/suno-prod-s8wir/?*",
+    "*://clerk.suno.com/v1/client/sessions/*",
+    "*://rumble.com/l/*",
+    "*://geo.captcha-delivery.com/*",
+    "*://dp.idealista.com/*",
+    "*://errors.figma.com/*",
+    "*://*.statsigapi.net/*"
   ]
 }
