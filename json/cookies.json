@@ -44,6 +44,10 @@
     "cookies": ["*"]
   },
   {
+    "domain": "grok.com",
+    "cookies": ["*"]
+  },
+  {
     "domain": "app.addy.io",
     "cookies": ["*"]
   },
