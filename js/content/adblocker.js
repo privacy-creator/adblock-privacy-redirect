@@ -9,11 +9,11 @@ const config = {
         ids: [],
         querySelectors: []  // Empty array for querySelectors
     },
-    "www.youtube.com": {  // Matches specific URL pattern
-        classes: [],
-        ids: ['panels'],
-        querySelectors: []  // Empty array for querySelectors
-    },
+    // "www.youtube.com": {  // Matches specific URL pattern
+    //     classes: [],
+    //     ids: ['panels'],
+    //     querySelectors: []  // Empty array for querySelectors
+    // },
     "x.com": {  // Matches specific URL pattern
         classes: [''],  // Empty class list
         ids: [],

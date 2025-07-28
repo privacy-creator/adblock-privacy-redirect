@@ -1,13 +1,13 @@
 window.onload = function () {
     getFiltersFromJson()
-    ytBlockScriptsByName()
+    // ytBlockScriptsByName()
 
-    checkVPNStatus()
-    setInterval(checkVPNStatus, 10 * 1000)
+    // checkVPNStatus()
+    // setInterval(checkVPNStatus, 10 * 1000)
 
-    sunoHack()
+    // sunoHack()
 
-    vpnBlockSite()
+    // vpnBlockSite()
 
     loadRedirectSettings()
     youtubeRedirectFunc()
@@ -19,9 +19,6 @@ window.onload = function () {
     replaceFonts()
     replaceScripts()
 
-    // Add an event listener for the storage event
-    // window.addEventListener('storage', handleStorageChange)
-
 // Listen for changes in the storage
     chrome.storage.onChanged.addListener((changes, namespace) => {
         for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
@@ -30,10 +27,6 @@ window.onload = function () {
             } else {
                 loadRedirectSettings()
             }
-            // console.log(
-            //     `Storage key "${key}" in namespace "${namespace}" changed.`,
-            //     `Old value was "${oldValue}", new value is "${newValue}".`
-            // );
         }
     });
 }

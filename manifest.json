@@ -29,10 +29,7 @@
                 "*://www.youtube.com/*",
                 "*://m.youtube.com/*"
             ],
-            "css": ["css/youtube.css"],
-            "js": [
-                "js/content/yt.js"
-            ]
+            "css": ["css/youtube.css"]
         },{
             "matches": [
                 "*://invidious.fdn.fr/*",

@@ -38,7 +38,7 @@ const youtubeShortFilters = [
     "*://www.youtube.com/shorts/*",
 ]
 
-let bestYoutubeSite = "invidious.nerdvpn.de"
+let bestYoutubeSite = "yewtu.be"
 
 let youtubeRedirect
 let googleRedirect

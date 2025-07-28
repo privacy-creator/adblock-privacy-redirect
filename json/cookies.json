@@ -66,5 +66,9 @@
   {
     "domain": "figma.com",
     "cookies": ["*"]
+  },
+  {
+    "domain": "indeed.com",
+    "cookies": ["*"]
   }
 ]
